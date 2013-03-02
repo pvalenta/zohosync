@@ -52,7 +52,11 @@ namespace ZohoSync
                 {
 
                     // request
+                    webClient.Encoding = Encoding.UTF8;
                     string content = webClient.DownloadString(string.Format(TABLE_API, t, token, i, i + 199));
+
+                    // encode
+
 
                     // parse it
                     XElement partRoot = XElement.Parse(content);
@@ -69,8 +73,17 @@ namespace ZohoSync
                         var result = partRoot.Descendants(t).First().Elements("row").ToList();
                         foreach (var r in result)
                         {
-                            r.Remove();
-                            root.Add(r);
+                            // hodnoty
+                            var row = new XElement("row");
+                            var email = r.Elements("FL").Where(e => e.Attribute("val").Value == "Email").FirstOrDefault();
+                            if (email != null) row.Add(new XElement("email", email.Value));
+                            var fname = r.Elements("FL").Where(e => e.Attribute("val").Value == "First Name").FirstOrDefault();
+                            if (fname != null) row.Add(new XElement("jmeno", fname.Value));
+                            var lname = r.Elements("FL").Where(e => e.Attribute("val").Value == "Last Name").FirstOrDefault();
+                            if (lname != null) row.Add(new XElement("prijmeni", lname.Value));
+
+                            //r.Remove();
+                            root.Add(row);
                         }
                     }
 
