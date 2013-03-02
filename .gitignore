@@ -62,7 +62,6 @@ local.properties
 *.vspscc
 .builds
 *.dotCover
-obj/
 
 ## TODO: If you have NuGet Package Restore enabled, uncomment this
 #packages/
@@ -162,3 +161,6 @@ pip-log.txt
 
 # Mac crap
 .DS_Store
+
+# My Config
+App.config
