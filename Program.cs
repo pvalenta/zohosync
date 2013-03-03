@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿
 namespace ZohoSync
 {
+    using System;
+
     /// <summary>
     /// main entry class
     /// </summary>
@@ -17,12 +15,17 @@ namespace ZohoSync
         static void Main(string[] args)
         {
             // write header
-            Console.WriteLine("Zoho Sync Tool");
+            Console.WriteLine("Zoho Sync Tool (1.0.0)");
+            Console.WriteLine("© Pavel Valenta 2013");
             Console.WriteLine("");
 
             // get zoho
             var zoho = new ZohoReader();
-            zoho.GetData();
+            var response = zoho.GetData();
+
+            // send to smart emailing
+            var smart = new SmartEmailingWriter();
+            smart.SendData(response);
 
             // the end
             Console.WriteLine("");

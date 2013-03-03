@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Xml.Linq;
-
+﻿
 namespace ZohoSync
 {
+    using System;
+    using System.IO;
+    using System.Linq;
+    using System.Net;
+    using System.Text;
+    using System.Xml.Linq;
+
     /// <summary>
     /// zoho data reader
     /// </summary>
@@ -27,10 +26,15 @@ namespace ZohoSync
         /// <summary>
         /// get data
         /// </summary>
-        public void GetData()
+        /// <returns>Xml Element with all data</returns>
+        public XElement GetData()
         {
+            // write to console
+            Console.Write("Zoho: authenticate - ");
+
             // authenticate
             var webClient = new WebClient();
+            webClient.Encoding = Encoding.UTF8;
             string response = webClient.DownloadString(string.Format(LOGIN_API, ConfigReader.ZohoLogin, ConfigReader.ZohoPassword));
 
             // split by lines
@@ -41,28 +45,37 @@ namespace ZohoSync
                          where l.StartsWith("AUTHTOKEN=")
                          select l.Split('=')[1]).FirstOrDefault();
 
+            // done
+            Console.WriteLine(" done. [" + token + "]");
+
+            // main xml
+            XElement root = new XElement("response");
+
             // let's suck data
             var tables = ConfigReader.ZohoTables;
             foreach (var t in tables)
             {
-                // main xml
-                XElement root = new XElement("response");
+                // request table
+                Console.Write("Zoho: request table '" + t + "'");
 
                 for (int i = 0; i < 1000; i = i + 200)
                 {
+                    Console.Write(".");
 
                     // request
                     webClient.Encoding = Encoding.UTF8;
                     string content = webClient.DownloadString(string.Format(TABLE_API, t, token, i, i + 199));
 
-                    // encode
-
-
                     // parse it
                     XElement partRoot = XElement.Parse(content);
-                    if (partRoot.Elements("nodata").Any()) break;
+                    if (partRoot.Elements("nodata").Any())
+                    {
+                        Console.WriteLine(" done.");
+                        break;
+                    }
                     else if (partRoot.Elements("error").Any())
                     {
+                        Console.WriteLine(" failed.");
                         var error = partRoot.Elements("error").First();
                         error.Remove();
                         root.Add(error);
@@ -74,27 +87,30 @@ namespace ZohoSync
                         foreach (var r in result)
                         {
                             // hodnoty
-                            var row = new XElement("row");
+                            var row = new XElement("record");
                             var email = r.Elements("FL").Where(e => e.Attribute("val").Value == "Email").FirstOrDefault();
                             if (email != null) row.Add(new XElement("email", email.Value));
+                            else row.Add(new XElement("email", string.Empty));
                             var fname = r.Elements("FL").Where(e => e.Attribute("val").Value == "First Name").FirstOrDefault();
-                            if (fname != null) row.Add(new XElement("jmeno", fname.Value));
+                            if (fname != null) row.Add(new XElement("firstName", fname.Value));
+                            else row.Add(new XElement("firstName", string.Empty));
                             var lname = r.Elements("FL").Where(e => e.Attribute("val").Value == "Last Name").FirstOrDefault();
-                            if (lname != null) row.Add(new XElement("prijmeni", lname.Value));
+                            if (lname != null) row.Add(new XElement("lastName", lname.Value));
+                            else row.Add(new XElement("lastName", string.Empty));
 
                             //r.Remove();
                             root.Add(row);
                         }
                     }
-
                 }
-
-                // build path
-                string file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), t + ".xml");
-
-                // save it
-                root.Save(file);
             }
+
+            // save it
+            string file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), string.Join("-", tables.ToArray()) + ".xml");
+            root.Save(file);
+            Console.WriteLine("Zoho: export saved to '" + file + "' done.");
+
+            return root;
         }
     }
 }
