@@ -43,6 +43,7 @@ namespace ZohoSync
 
             // let's build data in
             contacts.Add(data.Elements("record")
+                .Where(e => e.Element("email").Value.Length > 0)
                 .Select(e => new XElement("details",
                     new XElement("emailaddress", e.Element("email").Value),
                     new XElement("format", "html"),
