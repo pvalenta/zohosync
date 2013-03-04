@@ -21,10 +21,11 @@ namespace ZohoSync
         /// <summary>
         /// send data
         /// </summary>
+        /// <param name="list">smart emailing list</param>
         /// <param name="data">data</param>
-        public void SendData(XElement data)
+        public void SendData(string list, XElement data)
         {
-            Console.Write("SmartEmailing: building xml request - ");
+            Program.OutputWrite("SmartEmailing: building xml request - ");
 
             // build xml header
             var root = new XElement("xmlrequest",
@@ -33,7 +34,7 @@ namespace ZohoSync
                 new XElement("requesttype", "sm_lists"),
                 new XElement("requestmethod", "SynchronizeList"),
                 new XElement("details",
-                    new XElement("list_name", ConfigReader.SmartEmailList),
+                    new XElement("list_name", list),
                     new XElement("replytoemail", ConfigReader.SmartEmailReplyTo),
                     new XElement("ownername", ConfigReader.SmartEmailOwnerName),
                     new XElement("owneremail", ConfigReader.SmartEmailOwnerEmail),
@@ -58,29 +59,39 @@ namespace ZohoSync
                             new XElement("value", e.Element("lastName").Value))))));
 
             // convert done
-            Console.WriteLine("done.");
+            Program.OutputWriteLine("done.");
 
-            // save it
-            string file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), ConfigReader.SmartEmailList + ".xml");
-            root.Save(file);
-            Console.WriteLine("SmartEmailing: export saved to '" + file + "' done.");
-
-            Console.Write("SmartEmailing: submit to server - ");
-
-            // submit it
-            var webClient = new WebClient();
-            webClient.Encoding = Encoding.UTF8;
-            var response = webClient.UploadString(API_URL, root.ToString());
-
-            // parse
-            root = XElement.Parse(response);
-            if (root.Element("status").Value.Equals("success", StringComparison.InvariantCultureIgnoreCase))
+            if (Program.WriteFiles)
             {
-                Console.WriteLine("done.");
+                // save it
+                string file = Path.Combine(Directory.GetCurrentDirectory(), list + ".xml");
+                root.Save(file);
+                Program.OutputWriteLine("SmartEmailing: export saved to '" + file + "' done.");
+            }
+
+            Program.OutputWrite("SmartEmailing: submit to server - ");
+
+            if (Program.TestOnly)
+            {
+                Program.OutputWriteLine("skipped (test only).");
             }
             else
             {
-                Console.WriteLine("failed.");
+                // submit it
+                var webClient = new WebClient();
+                webClient.Encoding = Encoding.UTF8;
+                var response = webClient.UploadString(API_URL, root.ToString());
+
+                // parse
+                root = XElement.Parse(response);
+                if (root.Element("status").Value.Equals("success", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    Program.OutputWriteLine("done.");
+                }
+                else
+                {
+                    Program.OutputWriteLine("failed.");
+                }
             }
         }
     }

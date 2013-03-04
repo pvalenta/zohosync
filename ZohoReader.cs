@@ -24,13 +24,17 @@ namespace ZohoSync
         const string TABLE_API = "https://crm.zoho.com/crm/private/xml/{0}/getRecords?newFormat=1&authtoken={1}&scope=crmapi&fromIndex={2}&toIndex={3}";
 
         /// <summary>
-        /// get data
+        /// token
         /// </summary>
-        /// <returns>Xml Element with all data</returns>
-        public XElement GetData()
+        private string token = string.Empty;
+
+        /// <summary>
+        /// authenticate
+        /// </summary>
+        public void Authenticate()
         {
             // write to console
-            Console.Write("Zoho: authenticate - ");
+            Program.OutputWrite("Zoho: authenticate - ");
 
             // authenticate
             var webClient = new WebClient();
@@ -41,74 +45,81 @@ namespace ZohoSync
             var lines = response.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
             // auth token
-            var token = (from l in lines
-                         where l.StartsWith("AUTHTOKEN=")
-                         select l.Split('=')[1]).FirstOrDefault();
+            this.token = (from l in lines
+                          where l.StartsWith("AUTHTOKEN=")
+                          select l.Split('=')[1]).FirstOrDefault();
 
             // done
-            Console.WriteLine(" done. [" + token + "]");
+            Program.OutputWriteLine(" done. [" + this.token + "]");
+        }
+
+        /// <summary>
+        /// get data
+        /// </summary>
+        /// <param name="zohoTable">zoho table</param>
+        /// <returns>Xml Element with all data</returns>
+        public XElement GetData(string zohoTable)
+        {
 
             // main xml
             XElement root = new XElement("response");
 
-            // let's suck data
-            var tables = ConfigReader.ZohoTables;
-            foreach (var t in tables)
+            // request table
+            Program.OutputWrite("Zoho: request table '" + zohoTable + "'");
+            var webClient = new WebClient();
+            for (int i = 0; i < 1000; i = i + 200)
             {
-                // request table
-                Console.Write("Zoho: request table '" + t + "'");
+                Program.OutputWrite(".");
 
-                for (int i = 0; i < 1000; i = i + 200)
+                // request
+                webClient.Encoding = Encoding.UTF8;
+                string content = webClient.DownloadString(string.Format(TABLE_API, zohoTable, token, i, i + 199));
+
+                // parse it
+                XElement partRoot = XElement.Parse(content);
+                if (partRoot.Elements("nodata").Any())
                 {
-                    Console.Write(".");
-
-                    // request
-                    webClient.Encoding = Encoding.UTF8;
-                    string content = webClient.DownloadString(string.Format(TABLE_API, t, token, i, i + 199));
-
-                    // parse it
-                    XElement partRoot = XElement.Parse(content);
-                    if (partRoot.Elements("nodata").Any())
+                    Program.OutputWriteLine(" done.");
+                    break;
+                }
+                else if (partRoot.Elements("error").Any())
+                {
+                    Program.OutputWriteLine(" failed.");
+                    var error = partRoot.Elements("error").First();
+                    error.Remove();
+                    root.Add(error);
+                    break;
+                }
+                else if (partRoot.Descendants(zohoTable).Any())
+                {
+                    var result = partRoot.Descendants(zohoTable).First().Elements("row").ToList();
+                    foreach (var r in result)
                     {
-                        Console.WriteLine(" done.");
-                        break;
-                    }
-                    else if (partRoot.Elements("error").Any())
-                    {
-                        Console.WriteLine(" failed.");
-                        var error = partRoot.Elements("error").First();
-                        error.Remove();
-                        root.Add(error);
-                        break;
-                    }
-                    else if (partRoot.Descendants(t).Any())
-                    {
-                        var result = partRoot.Descendants(t).First().Elements("row").ToList();
-                        foreach (var r in result)
-                        {
-                            // hodnoty
-                            var row = new XElement("record");
-                            var email = r.Elements("FL").Where(e => e.Attribute("val").Value == "Email").FirstOrDefault();
-                            if (email != null) row.Add(new XElement("email", email.Value));
-                            else row.Add(new XElement("email", string.Empty));
-                            var fname = r.Elements("FL").Where(e => e.Attribute("val").Value == "First Name").FirstOrDefault();
-                            if (fname != null) row.Add(new XElement("firstName", fname.Value));
-                            else row.Add(new XElement("firstName", string.Empty));
-                            var lname = r.Elements("FL").Where(e => e.Attribute("val").Value == "Last Name").FirstOrDefault();
-                            if (lname != null) row.Add(new XElement("lastName", lname.Value));
-                            else row.Add(new XElement("lastName", string.Empty));
+                        // hodnoty
+                        var row = new XElement("record");
+                        var email = r.Elements("FL").Where(e => e.Attribute("val").Value == "Email").FirstOrDefault();
+                        if (email != null) row.Add(new XElement("email", email.Value));
+                        else row.Add(new XElement("email", string.Empty));
+                        var fname = r.Elements("FL").Where(e => e.Attribute("val").Value == "First Name").FirstOrDefault();
+                        if (fname != null) row.Add(new XElement("firstName", fname.Value));
+                        else row.Add(new XElement("firstName", string.Empty));
+                        var lname = r.Elements("FL").Where(e => e.Attribute("val").Value == "Last Name").FirstOrDefault();
+                        if (lname != null) row.Add(new XElement("lastName", lname.Value));
+                        else row.Add(new XElement("lastName", string.Empty));
 
-                            //r.Remove();
-                            root.Add(row);
-                        }
+                        //r.Remove();
+                        root.Add(row);
                     }
                 }
             }
 
-            // save it
-            string file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), string.Join("-", tables.ToArray()) + ".xml");
-            root.Save(file);
-            Console.WriteLine("Zoho: export saved to '" + file + "' done.");
+            if (Program.WriteFiles)
+            {
+                // save it
+                string file = Path.Combine(Directory.GetCurrentDirectory(), zohoTable + ".xml");
+                root.Save(file);
+                Program.OutputWriteLine("Zoho: export saved to '" + file + "' done.");
+            }
 
             return root;
         }
