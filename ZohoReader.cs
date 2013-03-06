@@ -67,6 +67,7 @@ namespace ZohoSync
             // request table
             Program.OutputWrite("Zoho: request table '" + zohoTable + "'");
             var webClient = new WebClient();
+            var counter = 0;
             for (int i = 0; i < 1000; i = i + 200)
             {
                 Program.OutputWrite(".");
@@ -79,7 +80,7 @@ namespace ZohoSync
                 XElement partRoot = XElement.Parse(content);
                 if (partRoot.Elements("nodata").Any())
                 {
-                    Program.OutputWriteLine(" done.");
+                    Program.OutputWriteLine(" done [" + counter + " records]");
                     break;
                 }
                 else if (partRoot.Elements("error").Any())
@@ -107,7 +108,7 @@ namespace ZohoSync
                         if (lname != null) row.Add(new XElement("lastName", lname.Value));
                         else row.Add(new XElement("lastName", string.Empty));
 
-                        //r.Remove();
+                        counter++;
                         root.Add(row);
                     }
                 }

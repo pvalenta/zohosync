@@ -59,7 +59,7 @@ namespace ZohoSync
                             new XElement("value", e.Element("lastName").Value))))));
 
             // convert done
-            Program.OutputWriteLine("done.");
+            Program.OutputWriteLine("done [" + contacts.Elements().Count() + " records]");
 
             if (Program.WriteFiles)
             {
