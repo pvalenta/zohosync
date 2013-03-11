@@ -68,7 +68,7 @@ namespace ZohoSync
             Program.OutputWrite("Zoho: request table '" + zohoTable + "'");
             var webClient = new WebClient();
             var counter = 0;
-            for (int i = 0; i < 1000; i = i + 200)
+            for (int i = 0; i < 1000000; i = i + 200)
             {
                 Program.OutputWrite(".");
 
