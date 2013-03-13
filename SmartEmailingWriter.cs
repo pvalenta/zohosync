@@ -4,7 +4,6 @@ namespace ZohoSync
     using System;
     using System.IO;
     using System.Linq;
-    using System.Net;
     using System.Text;
     using System.Xml.Linq;
 
@@ -78,7 +77,7 @@ namespace ZohoSync
             else
             {
                 // submit it
-                var webClient = new WebClient();
+                var webClient = new SlowWebClient();
                 webClient.Encoding = Encoding.UTF8;
                 var response = webClient.UploadString(API_URL, root.ToString());
 

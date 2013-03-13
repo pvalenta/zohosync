@@ -48,6 +48,9 @@
     <Compile Include="Config\MappingSetting.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SlowWebClient.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="SmartEmailingWriter.cs" />
     <Compile Include="ZohoReader.cs" />
   </ItemGroup>

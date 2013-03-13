@@ -4,7 +4,6 @@ namespace ZohoSync
     using System;
     using System.IO;
     using System.Linq;
-    using System.Net;
     using System.Text;
     using System.Xml.Linq;
 
@@ -37,7 +36,7 @@ namespace ZohoSync
             Program.OutputWrite("Zoho: authenticate - ");
 
             // authenticate
-            var webClient = new WebClient();
+            var webClient = new SlowWebClient();
             webClient.Encoding = Encoding.UTF8;
             string response = webClient.DownloadString(string.Format(LOGIN_API, ConfigReader.ZohoLogin, ConfigReader.ZohoPassword));
 
@@ -66,7 +65,7 @@ namespace ZohoSync
 
             // request table
             Program.OutputWrite("Zoho: request table '" + zohoTable + "'");
-            var webClient = new WebClient();
+            var webClient = new SlowWebClient();
             var counter = 0;
             for (int i = 0; i < 1000000; i = i + 200)
             {
@@ -74,6 +73,7 @@ namespace ZohoSync
 
                 // request
                 webClient.Encoding = Encoding.UTF8;
+                
                 string content = webClient.DownloadString(string.Format(TABLE_API, zohoTable, token, i, i + 199));
 
                 // parse it
