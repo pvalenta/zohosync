@@ -4,6 +4,7 @@ namespace ZohoSync
     using System;
     using System.IO;
     using System.Linq;
+    using System.Net;
     using System.Text;
     using System.Xml.Linq;
 
@@ -79,17 +80,29 @@ namespace ZohoSync
                 // submit it
                 var webClient = new SlowWebClient();
                 webClient.Encoding = Encoding.UTF8;
-                var response = webClient.UploadString(API_URL, root.ToString());
 
-                // parse
-                root = XElement.Parse(response);
-                if (root.Element("status").Value.Equals("success", StringComparison.InvariantCultureIgnoreCase))
+                try
                 {
-                    Program.OutputWriteLine("done.");
+                    var response = webClient.UploadString(API_URL, root.ToString());
+
+                    // parse
+                    root = XElement.Parse(response);
+                    if (root.Element("status").Value.Equals("success", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        Program.OutputWriteLine("done.");
+                    }
+                    else
+                    {
+                        Program.OutputWriteLine("failed.");
+                    }
                 }
-                else
+                catch (WebException ex)
                 {
-                    Program.OutputWriteLine("failed.");
+                    Program.OutputWriteLine("failed (" + ex.Message + ")");
+                }
+                catch (Exception ex)
+                {
+                    Program.OutputWriteLine("failed (" + ex.Message + ")");
                 }
             }
         }

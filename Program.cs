@@ -38,7 +38,7 @@ namespace ZohoSync
         static void Main(string[] args)
         {
             // write header
-            Console.WriteLine("Zoho Sync Tool (1.0.0)");
+            Console.WriteLine("Zoho Sync Tool (1.0.1)");
             Console.WriteLine("© Pavel Valenta 2013");
             Console.WriteLine("");
 
