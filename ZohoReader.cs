@@ -30,7 +30,7 @@ namespace ZohoSync
         /// <summary>
         /// authenticate
         /// </summary>
-        public void Authenticate()
+        public bool Authenticate()
         {
             // write to console
             Program.OutputWrite("Zoho: authenticate - ");
@@ -43,13 +43,31 @@ namespace ZohoSync
             // split by lines
             var lines = response.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-            // auth token
-            this.token = (from l in lines
-                          where l.StartsWith("AUTHTOKEN=")
-                          select l.Split('=')[1]).FirstOrDefault();
+            // result
+            var result = bool.Parse((from l in lines
+                                     where l.StartsWith("RESULT=")
+                                     select l.Split('=')[1]).FirstOrDefault());
+            if (!result)
+            {
+                // failed
+                var cause = (from l in lines
+                             where l.StartsWith("CAUSE=")
+                             select l.Split('=')[1]).FirstOrDefault();
+                Program.OutputWriteLine(" failed. [" + cause + "]");
+                return false;
+            }
+            else
+            {
 
-            // done
-            Program.OutputWriteLine(" done. [" + this.token + "]");
+                // auth token
+                this.token = (from l in lines
+                              where l.StartsWith("AUTHTOKEN=")
+                              select l.Split('=')[1]).FirstOrDefault();
+
+                // done
+                Program.OutputWriteLine(" done. [" + this.token + "]");
+                return true;
+            }
         }
 
         /// <summary>

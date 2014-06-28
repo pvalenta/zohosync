@@ -67,7 +67,15 @@ namespace ZohoSync
 
             // get mapping
             var mapping = ConfigReader.MappingSetting;
-            zoho.Authenticate();
+            if (!zoho.Authenticate())
+            {
+                if (WaitForKey)
+                {
+                    Console.WriteLine("Please press key to close.");
+                    Console.ReadKey(true);
+                }
+                return;
+            }
             foreach (var m in mapping.Setting)
             {
                 var map = m as Mapping;
